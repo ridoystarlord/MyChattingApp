@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "726731906690",
+    "project_id": "mychattingapp-937be",
+    "storage_bucket": "mychattingapp-937be.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:726731906690:android:032f477e3e2784e2219e9b",
+        "android_client_info": {
+          "package_name": "com.ridoy.mychattingapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "726731906690-hcfnb1tinu5vujdju48332mdovmb218a.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ridoy.mychattingapp",
+            "certificate_hash": "9b8c81cf73b75d274d4c3a0a2244349a2b427aa5"
+          }
+        },
+        {
+          "client_id": "726731906690-ees2vp1se7puthas73sk9mhm9v4eefsp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAGO13mLzJ5hVi42CtGGll9tNSx6-8KsUA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "726731906690-ees2vp1se7puthas73sk9mhm9v4eefsp.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
