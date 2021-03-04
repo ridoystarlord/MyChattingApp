@@ -1,10 +1,12 @@
 package com.ridoy.mychattingapp.Adapter;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -14,28 +16,32 @@ import com.github.pgreze.reactions.ReactionPopup;
 import com.github.pgreze.reactions.ReactionsConfig;
 import com.github.pgreze.reactions.ReactionsConfigBuilder;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.ridoy.mychattingapp.Model.Messagemodel;
+import com.ridoy.mychattingapp.Model.Userinformation;
 import com.ridoy.mychattingapp.R;
+import com.ridoy.mychattingapp.databinding.DeleteDialogBinding;
+import com.ridoy.mychattingapp.databinding.GroupReceiverLayoutBinding;
+import com.ridoy.mychattingapp.databinding.GroupSenderLayoutBinding;
 import com.ridoy.mychattingapp.databinding.ReceiverLayoutBinding;
 import com.ridoy.mychattingapp.databinding.SenderLayoutBinding;
 
 import java.util.ArrayList;
 
-public class ChatAdapter extends RecyclerView.Adapter {
+public class GroupChatAdapter extends RecyclerView.Adapter {
 
     Context context;
     ArrayList<Messagemodel> messagemodels;
-    String senderRoom,receiverRoom;
 
     final int senderView=1;
     final int ReceiverView=2;
 
-    public ChatAdapter(Context context, ArrayList<Messagemodel> messagemodels, String senderRoom, String receiverRoom) {
+    public GroupChatAdapter(Context context, ArrayList<Messagemodel> messagemodels) {
         this.context = context;
         this.messagemodels = messagemodels;
-        this.senderRoom = senderRoom;
-        this.receiverRoom = receiverRoom;
     }
 
     @NonNull
@@ -43,10 +49,10 @@ public class ChatAdapter extends RecyclerView.Adapter {
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
 
         if (viewType==senderView){
-            View view= LayoutInflater.from(context).inflate(R.layout.sender_layout,parent,false);
+            View view= LayoutInflater.from(context).inflate(R.layout.group_sender_layout,parent,false);
             return new SenderViewholder(view);
         }else {
-            View view=LayoutInflater.from(context).inflate(R.layout.receiver_layout,parent,false);
+            View view=LayoutInflater.from(context).inflate(R.layout.group_receiver_layout,parent,false);
             return new ReceiverViewHolder(view);
         }
     }
@@ -80,15 +86,7 @@ public class ChatAdapter extends RecyclerView.Adapter {
             }
             message.setFeeling(pos);
             FirebaseDatabase.getInstance().getReference()
-                    .child("Chats")
-                    .child(senderRoom)
-                    .child("Messages")
-                    .child(message.getMsgid())
-                    .setValue(message);
-            FirebaseDatabase.getInstance().getReference()
-                    .child("Chats")
-                    .child(receiverRoom)
-                    .child("Messages")
+                    .child("GroupChats")
                     .child(message.getMsgid())
                     .setValue(message);
 
@@ -97,21 +95,40 @@ public class ChatAdapter extends RecyclerView.Adapter {
 
 
         if (holder.getClass()==SenderViewholder.class){
+
             SenderViewholder senderViewholder= (SenderViewholder) holder;
+
             if (message.getMessage().equals("Photo")){
                 senderViewholder.senderLayoutBinding.sentimageView.setVisibility(View.VISIBLE);
                 senderViewholder.senderLayoutBinding.sentmsg.setVisibility(View.GONE);
                 Glide.with(context).load(message.getImageUrl())
                         .placeholder(R.drawable.placeholder)
                         .into(senderViewholder.senderLayoutBinding.sentimageView);
-            }
 
+            }
             senderViewholder.senderLayoutBinding.sentmsg.setText(message.getMessage());
+            FirebaseDatabase.getInstance()
+                    .getReference().child("Users")
+                    .child(message.getSenderid())
+                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot snapshot) {
+                            if(snapshot.exists()) {
+                                Userinformation user = snapshot.getValue(Userinformation.class);
+                                senderViewholder.senderLayoutBinding.gsenderusername.setText("@" + user.getName());
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {
+
+                        }
+                    });
             if (message.getFeeling()>=0){
                 senderViewholder.senderLayoutBinding.sentfeelings.setImageResource(reactionsarray[message.getFeeling()]);
                 senderViewholder.senderLayoutBinding.sentfeelings.setVisibility(View.VISIBLE);
-            }else {
-                //senderViewholder.senderLayoutBinding.sentfeelings.setVisibility(View.GONE);
+            }else if (message.getFeeling()==-2){
+                senderViewholder.senderLayoutBinding.sentfeelings.setVisibility(View.GONE);
             }
             senderViewholder.senderLayoutBinding.sentfeelings.setOnTouchListener(new View.OnTouchListener() {
                 @Override
@@ -128,6 +145,48 @@ public class ChatAdapter extends RecyclerView.Adapter {
                 }
             });
 
+            senderViewholder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+
+                    View view = LayoutInflater.from(context).inflate(R.layout.delete_dialog, null);
+                    DeleteDialogBinding binding = DeleteDialogBinding.bind(view);
+                    AlertDialog dialog = new AlertDialog.Builder(context)
+                            .setTitle("Delete Message")
+                            .setView(binding.getRoot())
+                            .create();
+                    dialog.show();
+                    binding.everyone.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            message.setMessage("This message is removed...");
+                            message.setFeeling(-2);
+                            FirebaseDatabase.getInstance().getReference()
+                                    .child("GroupChats")
+                                    .child(message.getMsgid()).setValue(message);
+                            dialog.dismiss();
+                        }
+                    });
+                    binding.delete.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            FirebaseDatabase.getInstance().getReference()
+                                    .child("GroupChats")
+                                    .child(message.getMsgid()).setValue(null);
+                            dialog.dismiss();
+                        }
+                    });
+                    binding.cancel.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            dialog.dismiss();
+                        }
+                    });
+
+                    return false;
+                }
+            });
+
         }else {
             ReceiverViewHolder receiverViewHolder= (ReceiverViewHolder) holder;
             if (message.getMessage().equals("Photo")){
@@ -137,14 +196,33 @@ public class ChatAdapter extends RecyclerView.Adapter {
                         .placeholder(R.drawable.placeholder)
                         .into(receiverViewHolder.receiverLayoutBinding.receiverimageView);
             }
+
+            FirebaseDatabase.getInstance()
+                    .getReference().child("users")
+                    .child(message.getSenderid())
+                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot snapshot) {
+                            if(snapshot.exists()) {
+                                Userinformation user = snapshot.getValue(Userinformation.class);
+                                receiverViewHolder.receiverLayoutBinding.grevusername.setText("@" + user.getName());
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {
+
+                        }
+                    });
+
             receiverViewHolder.receiverLayoutBinding.receivermsg.setText(message.getMessage());
             if (message.getFeeling()>=0){
                 receiverViewHolder.receiverLayoutBinding.receiverfeelings.setImageResource(reactionsarray[message.getFeeling()]);
                 receiverViewHolder.receiverLayoutBinding.receiverfeelings.setVisibility(View.VISIBLE);
-            }else {
+            }else if (message.getFeeling()==2){
                 receiverViewHolder.receiverLayoutBinding.receiverfeelings.setVisibility(View.GONE);
             }
-            receiverViewHolder.receiverLayoutBinding.receivermsg.setOnTouchListener(new View.OnTouchListener() {
+            receiverViewHolder.receiverLayoutBinding.receiverfeelings.setOnTouchListener(new View.OnTouchListener() {
                 @Override
                 public boolean onTouch(View v, MotionEvent event) {
                     popup.onTouch(v,event);
@@ -178,19 +256,19 @@ public class ChatAdapter extends RecyclerView.Adapter {
     }
 
     public class ReceiverViewHolder extends RecyclerView.ViewHolder {
-        ReceiverLayoutBinding receiverLayoutBinding;
+        GroupReceiverLayoutBinding receiverLayoutBinding;
         public ReceiverViewHolder(@NonNull View itemView) {
             super(itemView);
-            receiverLayoutBinding=ReceiverLayoutBinding.bind(itemView);
+            receiverLayoutBinding=GroupReceiverLayoutBinding.bind(itemView);
         }
     }
 
     public class SenderViewholder extends RecyclerView.ViewHolder {
 
-        SenderLayoutBinding senderLayoutBinding;
+        GroupSenderLayoutBinding senderLayoutBinding;
         public SenderViewholder(@NonNull View itemView) {
             super(itemView);
-            senderLayoutBinding=SenderLayoutBinding.bind(itemView);
+            senderLayoutBinding=GroupSenderLayoutBinding.bind(itemView);
         }
     }
 

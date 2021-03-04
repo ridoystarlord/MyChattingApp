@@ -2,7 +2,7 @@ package com.ridoy.mychattingapp.Model;
 
 public class Messagemodel {
 
-    private String msgid,message,senderid;
+    private String msgid,message,senderid,imageUrl;
     private long timestamp;
     private int feeling=-1;
 
@@ -10,6 +10,14 @@ public class Messagemodel {
         this.message = message;
         this.senderid = senderid;
         this.timestamp = timestamp;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
     public Messagemodel() {

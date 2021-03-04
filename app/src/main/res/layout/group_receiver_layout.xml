@@ -15,6 +15,20 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
+        <TextView
+            android:id="@+id/grevusername"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <View
+            android:id="@+id/view4"
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:background="@color/black" />
+
         <ImageView
             android:id="@+id/receiverimageView"
             android:layout_width="200dp"

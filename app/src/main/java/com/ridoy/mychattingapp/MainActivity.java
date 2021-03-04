@@ -187,7 +187,7 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(this, "Search Click", Toast.LENGTH_SHORT).show();
                 break;
             case R.id.top_menu_groups:
-                Toast.makeText(this, "Group Click", Toast.LENGTH_SHORT).show();
+                startActivity(new Intent(MainActivity.this,GroupChatActivity.class));
                 break;
             case R.id.top_menu_logout:
                 auth.signOut();
@@ -250,5 +250,23 @@ public class MainActivity extends AppCompatActivity {
 
             }
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        database.getReference().child("OnlineStatus")
+                .child(FirebaseAuth.getInstance().getUid())
+                .setValue("Online");
+
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        String senderid=FirebaseAuth.getInstance().getUid();
+        database.getReference().child("OnlineStatus")
+                .child(senderid)
+                .setValue("offline");
     }
 }
